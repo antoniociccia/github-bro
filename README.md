@@ -1,6 +1,10 @@
-# github-bro
+<p align="center">
+  <img src="logo.png" alt="github-bro" width="200" />
+</p>
 
-**Your Git-Bro that spots you on every PR.**
+<h1 align="center">github-bro</h1>
+
+<p align="center"><strong>Your Git-Bro that spots you on every PR.</strong></p>
 
 github-bro is a self-hosted AI code reviewer that automatically analyzes your GitHub pull requests and posts detailed reviews. It catches security vulnerabilities, bugs, performance issues, and bad practices before they reach production.
 
