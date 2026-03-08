@@ -105,6 +105,20 @@ Runs a **local LLM** by default (private, no data leaves your machine). Optional
 -- github-bro
 ```
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshot-review-findings.png" alt="Review with findings" width="100%" />
+</p>
+<p align="center"><em>PR #1 — Security vulnerabilities detected: SQL injection, path traversal, rate limiting bypass</em></p>
+
+<br/>
+
+<p align="center">
+  <img src="docs/screenshot-review-approve.png" alt="Clean code approved" width="100%" />
+</p>
+<p align="center"><em>PR #2 — Clean refactor, no issues found. Verdict: APPROVE</em></p>
+
 ---
 
 ## Quick start
