@@ -1,0 +1,27 @@
+services:
+  github-bro:
+    build: .
+    ports:
+      - "${PORT:-3010}:${PORT:-3010}"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  worker:
+    build: ./worker
+    profiles: ["local"]
+    ports:
+      - "${WORKER_PORT:-8000}:8000"
+    environment:
+      - MODEL_REPO=${MODEL_REPO:-Qwen/Qwen2.5-Coder-7B-Instruct-GGUF}
+      - MODEL_FILE=${MODEL_FILE:-qwen2.5-coder-7b-instruct-q4_k_m.gguf}
+      - MODEL_DIR=/models
+      - CONTEXT_SIZE=${CONTEXT_SIZE:-16384}
+      - GPU_LAYERS=${GPU_LAYERS:--1}
+      - WORKER_PORT=8000
+      - APP_SECRET=${APP_SECRET:-}
+    volumes:
+      - ./models:/models
+    restart: unless-stopped

@@ -1,0 +1,9 @@
+node_modules
+dist
+data
+models
+.env
+coverage
+ui/node_modules
+ui/dist
+worker/.venv
