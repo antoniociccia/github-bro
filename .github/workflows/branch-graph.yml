@@ -1,0 +1,108 @@
+name: Branch Graph
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate branch graph
+        id: graph
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+          BASE_BRANCH: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch origin "$BASE_BRANCH" --quiet
+
+          MERGE_BASE=$(git merge-base "origin/$BASE_BRANCH" HEAD)
+          MERGE_BASE_SHORT=$(echo "$MERGE_BASE" | cut -c1-7)
+
+          # Collect base branch commits (up to 5 before merge-base)
+          BASE_COMMITS=$(git log --reverse --oneline "origin/$BASE_BRANCH" -5 --format='%h %s' | head -5)
+
+          # Collect PR branch commits
+          PR_COMMITS=$(git log --reverse --oneline "$MERGE_BASE..HEAD" --format='%h %s')
+          PR_COUNT=$(echo "$PR_COMMITS" | grep -c . || echo 0)
+
+          # Check if base has commits after merge-base
+          BASE_AHEAD=$(git log --oneline "$MERGE_BASE..origin/$BASE_BRANCH" --format='%h %s')
+          BASE_AHEAD_COUNT=$(echo "$BASE_AHEAD" | grep -c . || echo 0)
+
+          # Build mermaid graph
+          {
+            echo 'GRAPH<<EOF'
+            echo '```mermaid'
+            echo 'gitGraph'
+            echo '  commit id: "..."'
+
+            # Base commits leading to merge-base
+            while IFS= read -r line; do
+              hash=$(echo "$line" | cut -d' ' -f1)
+              msg=$(echo "$line" | cut -d' ' -f2- | sed 's/"/\\"/g' | cut -c1-40)
+              echo "  commit id: \"$hash $msg\""
+            done <<< "$BASE_COMMITS"
+
+            # PR branch
+            echo "  branch $PR_BRANCH"
+
+            while IFS= read -r line; do
+              hash=$(echo "$line" | cut -d' ' -f1)
+              msg=$(echo "$line" | cut -d' ' -f2- | sed 's/"/\\"/g' | cut -c1-40)
+              echo "  commit id: \"$hash $msg\""
+            done <<< "$PR_COMMITS"
+
+            # Base branch continued if ahead
+            if [ "$BASE_AHEAD_COUNT" -gt "0" ]; then
+              echo "  checkout $BASE_BRANCH"
+              while IFS= read -r line; do
+                hash=$(echo "$line" | cut -d' ' -f1)
+                msg=$(echo "$line" | cut -d' ' -f2- | sed 's/"/\\"/g' | cut -c1-40)
+                echo "  commit id: \"$hash $msg\""
+              done <<< "$BASE_AHEAD"
+            fi
+
+            echo '```'
+            echo ''
+            echo "**Branch:** \`$PR_BRANCH\` → \`$BASE_BRANCH\`"
+            echo "**Commits:** $PR_COUNT | **Merge base:** \`$MERGE_BASE_SHORT\`"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post graph comment
+        uses: actions/github-script@v7
+        env:
+          GRAPH: ${{ steps.graph.outputs.GRAPH }}
+        with:
+          script: |
+            const body = `### Branch Graph\n\n${process.env.GRAPH}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body?.startsWith('### Branch Graph'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
