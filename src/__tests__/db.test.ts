@@ -11,17 +11,12 @@ import {
   getUserCount,
   createUser,
   getUserByEmail,
-  _db,
+  resetForTests,
+  rawQuery,
 } from "../db.js";
 
-function resetDb() {
-  _db.exec("DELETE FROM reviews");
-  _db.exec("DELETE FROM config");
-  _db.exec("DELETE FROM users");
-}
-
 describe("reviews", () => {
-  beforeEach(resetDb);
+  beforeEach(resetForTests);
 
   it("marks and detects already-reviewed PRs", () => {
     expect(alreadyReviewed("org", "repo", 1, "abc123")).toBe(false);
@@ -36,9 +31,9 @@ describe("reviews", () => {
   });
 
   it("getReviews returns reviews ordered by created_at DESC with pagination", () => {
-    _db.prepare("INSERT INTO reviews (owner, repo, pull_number, head_sha, review_body, verdict, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run("org", "repo", 1, "aaa", "r1", "COMMENT", "2026-01-01 00:00:00");
-    _db.prepare("INSERT INTO reviews (owner, repo, pull_number, head_sha, review_body, verdict, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run("org", "repo", 2, "bbb", "r2", "COMMENT", "2026-01-02 00:00:00");
-    _db.prepare("INSERT INTO reviews (owner, repo, pull_number, head_sha, review_body, verdict, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").run("org", "repo", 3, "ccc", "r3", "COMMENT", "2026-01-03 00:00:00");
+    rawQuery("INSERT INTO reviews (owner, repo, pull_number, head_sha, review_body, verdict, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", "org", "repo", 1, "aaa", "r1", "COMMENT", "2026-01-01 00:00:00");
+    rawQuery("INSERT INTO reviews (owner, repo, pull_number, head_sha, review_body, verdict, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", "org", "repo", 2, "bbb", "r2", "COMMENT", "2026-01-02 00:00:00");
+    rawQuery("INSERT INTO reviews (owner, repo, pull_number, head_sha, review_body, verdict, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", "org", "repo", 3, "ccc", "r3", "COMMENT", "2026-01-03 00:00:00");
 
     const page1 = getReviews({ limit: 2, offset: 0 }) as Array<{ pull_number: number }>;
     expect(page1).toHaveLength(2);
@@ -77,7 +72,7 @@ describe("reviews", () => {
 });
 
 describe("config", () => {
-  beforeEach(resetDb);
+  beforeEach(resetForTests);
 
   it("setConfig and getConfig round-trip", () => {
     setConfig("test_key", "test_value");
@@ -100,7 +95,7 @@ describe("config", () => {
 });
 
 describe("users", () => {
-  beforeEach(resetDb);
+  beforeEach(resetForTests);
 
   it("getUserCount returns 0 initially", () => {
     expect(getUserCount()).toBe(0);

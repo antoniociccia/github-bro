@@ -56,7 +56,21 @@ async function poll(): Promise<void> {
   }
 }
 
-let intervalId: ReturnType<typeof setInterval> | null = null;
+let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+function schedulePoll(): void {
+  const repos = getRepos();
+  const intervalMs = repos.length > 0 ? getIntervalMs() : 60000;
+
+  timeoutId = setTimeout(() => {
+    const currentRepos = getRepos();
+    if (currentRepos.length > 0) {
+      poll().finally(schedulePoll);
+    } else {
+      schedulePoll();
+    }
+  }, intervalMs);
+}
 
 export function startPoller(): void {
   const repos = getRepos();
@@ -69,9 +83,5 @@ export function startPoller(): void {
     poll();
   }
 
-  // Re-read config each tick so UI changes take effect
-  intervalId = setInterval(() => {
-    const currentRepos = getRepos();
-    if (currentRepos.length > 0) poll();
-  }, repos.length > 0 ? intervalMs : 60000);
+  schedulePoll();
 }
