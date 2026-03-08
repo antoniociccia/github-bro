@@ -78,7 +78,11 @@ router.delete("/reviews/:id", (req: Request, res: Response) => {
     res.status(400).json({ error: "Invalid review ID" });
     return;
   }
-  deleteReview(id);
+  const deleted = deleteReview(id);
+  if (!deleted) {
+    res.status(404).json({ error: "Review not found" });
+    return;
+  }
   res.json({ ok: true });
 });
 

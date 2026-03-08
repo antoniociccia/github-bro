@@ -34,9 +34,8 @@ describe("truncateDiff", () => {
 });
 
 describe("verdict extraction", () => {
-  // This logic lives inside reviewDiff — test the regex pattern
   function extractVerdict(content: string): string {
-    const match = content.match(/\*\*Verdict:\*\*\s*(REQUEST_CHANGES|COMMENT)/i);
+    const match = content.match(/\*\*Verdict:\*\*\s*(APPROVE|REQUEST_CHANGES|COMMENT)/i);
     return match ? match[1].toUpperCase() : "COMMENT";
   }
 
@@ -46,6 +45,10 @@ describe("verdict extraction", () => {
 
   it("extracts COMMENT", () => {
     expect(extractVerdict("**Verdict:** COMMENT")).toBe("COMMENT");
+  });
+
+  it("extracts APPROVE", () => {
+    expect(extractVerdict("**Verdict:** APPROVE")).toBe("APPROVE");
   });
 
   it("defaults to COMMENT when no verdict found", () => {

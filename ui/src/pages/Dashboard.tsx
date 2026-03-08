@@ -24,6 +24,7 @@ interface ReviewsResponse {
 }
 
 const PAGE_SIZE = 20;
+const TOAST_DURATION = 3000;
 
 export default function Dashboard() {
   const [data, setData] = useState<ReviewsResponse | null>(null);
@@ -32,10 +33,26 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [project, setProject] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const handleDelete = async (id: number) => {
-    await apiFetch(`/api/reviews/${id}`, { method: "DELETE" });
-    setRefreshKey((k) => k + 1);
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), TOAST_DURATION);
+  };
+
+  const confirmDelete = (id: number) => setPendingDelete(id);
+
+  const handleDelete = async () => {
+    if (pendingDelete === null) return;
+    const res = await apiFetch(`/api/reviews/${pendingDelete}`, { method: "DELETE" });
+    setPendingDelete(null);
+    if (res.ok) {
+      showToast("Review deleted");
+      setRefreshKey((k) => k + 1);
+    } else {
+      showToast("Failed to delete review", "error");
+    }
   };
 
   useEffect(() => {
@@ -119,7 +136,7 @@ export default function Dashboard() {
                   {new Date(r.created_at + "Z").toLocaleString()}
                 </span>
                 <button
-                  onClick={() => handleDelete(r.id)}
+                  onClick={() => confirmDelete(r.id)}
                   className="text-gray-700 text-sm hover:text-red-400 transition px-1"
                   title="Delete review"
                 >
@@ -163,6 +180,39 @@ export default function Dashboard() {
           >
             Next
           </button>
+        </div>
+      )}
+
+      {pendingDelete !== null && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#1a2332] border border-[#2a3a4a] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-semibold mb-2">Delete review?</h3>
+            <p className="text-sm text-gray-400 mb-6">This action cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setPendingDelete(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-[#0f1923] border border-[#2a3a4a] text-gray-400 hover:text-gray-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-500 transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl text-sm font-medium shadow-lg backdrop-blur-sm transition-all animate-slide-up ${
+          toast.type === "success"
+            ? "bg-[#1a3a1a]/90 text-[#7fff00] border border-[#7fff00]/30"
+            : "bg-red-900/90 text-red-300 border border-red-500/30"
+        }`}>
+          {toast.message}
         </div>
       )}
     </div>

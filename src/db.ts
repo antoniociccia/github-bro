@@ -5,8 +5,16 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = process.env.GITHUBBRO_DB || join(__dirname, "..", "data", "githubbro.db");
 const db = new Database(dbPath);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const _db: any = db;
+export function resetForTests(): void {
+  db.exec("DELETE FROM reviews");
+  db.exec("DELETE FROM config");
+  db.exec("DELETE FROM users");
+}
+
+export function rawQuery(sql: string, ...params: unknown[]): unknown {
+  const stmt = db.prepare(sql);
+  return params.length ? stmt.run(...params) : stmt.get();
+}
 
 db.pragma("journal_mode = WAL");
 
@@ -61,8 +69,9 @@ export function markReviewed(owner: string, repo: string, pullNumber: number, he
   insertStmt.run(owner, repo, pullNumber, headSha, reviewBody ?? null, verdict ?? null);
 }
 
-export function deleteReview(id: number): void {
-  db.prepare("DELETE FROM reviews WHERE id = ?").run(id);
+export function deleteReview(id: number): boolean {
+  const result = db.prepare("DELETE FROM reviews WHERE id = ?").run(id);
+  return result.changes > 0;
 }
 
 export function getReviews({ limit = 20, offset = 0, project }: { limit?: number; offset?: number; project?: string } = {}): unknown[] {

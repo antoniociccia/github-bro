@@ -117,7 +117,7 @@ export async function reviewDiff(diff: string, prTitle: string, prBody: string |
   const reviewStart = content.indexOf("## github-bro");
   if (reviewStart > 0) content = content.slice(reviewStart);
 
-  const verdictMatch = content.match(/\*\*Verdict:\*\*\s*(REQUEST_CHANGES|COMMENT)/i);
+  const verdictMatch = content.match(/\*\*Verdict:\*\*\s*(APPROVE|REQUEST_CHANGES|COMMENT)/i);
   const verdict = verdictMatch ? verdictMatch[1].toUpperCase() : "COMMENT";
 
   return { body: content, verdict };

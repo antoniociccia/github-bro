@@ -1,16 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, signToken, isAuthEnabled, requireAuth } from "../auth.js";
-import { createUser, _db } from "../db.js";
-
-function resetDb() {
-  _db.exec("DELETE FROM users");
-  _db.exec("DELETE FROM config");
-}
+import { createUser, resetForTests, rawQuery } from "../db.js";
 
 describe("getJwtSecret", () => {
   beforeEach(() => {
-    resetDb();
+    resetForTests();
     delete process.env.APP_SECRET;
   });
 
@@ -25,14 +20,14 @@ describe("getJwtSecret", () => {
     expect(secret).toHaveLength(64); // 32 bytes hex
     expect(secret).toMatch(/^[0-9a-f]{64}$/);
     // Verify it was stored in the config table
-    const row = _db.prepare("SELECT value FROM config WHERE key = 'jwt_secret'").get() as any;
+    const row = rawQuery("SELECT value FROM config WHERE key = 'jwt_secret'") as { value: string };
     expect(row.value).toBe(secret);
   });
 });
 
 describe("signToken + verify", () => {
   beforeEach(() => {
-    resetDb();
+    resetForTests();
     process.env.APP_SECRET = "test-secret-key";
   });
 
@@ -52,7 +47,7 @@ describe("signToken + verify", () => {
 });
 
 describe("isAuthEnabled", () => {
-  beforeEach(resetDb);
+  beforeEach(resetForTests);
 
   it("returns false when no users exist", () => {
     expect(isAuthEnabled()).toBe(false);
@@ -66,7 +61,7 @@ describe("isAuthEnabled", () => {
 
 describe("requireAuth middleware", () => {
   beforeEach(() => {
-    resetDb();
+    resetForTests();
     process.env.APP_SECRET = "test-secret";
   });
 
