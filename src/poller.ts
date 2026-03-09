@@ -1,4 +1,4 @@
-import { listOpenPRs, getPRDiff, postReview } from "./github.js";
+import { listOpenPRs, getPRDiff, postReview, getPRBranchGraph } from "./github.js";
 import { reviewDiff } from "./reviewer.js";
 import { alreadyReviewed, markReviewed, getConfig } from "./db.js";
 
@@ -28,6 +28,8 @@ async function pollRepo(owner: string, repo: string): Promise<void> {
     try {
       const diff = await getPRDiff(owner, repo, pr.number);
       const { body, verdict } = await reviewDiff(diff, pr.title, pr.body);
+      const graph = await getPRBranchGraph(owner, repo, pr.number);
+      const fullBody = graph ? `${graph}\n\n---\n\n${body}` : body;
       const config = getConfig();
       const postToGithub = (config.post_to_github || "true") !== "false";
       if (postToGithub) {
@@ -36,7 +38,7 @@ async function pollRepo(owner: string, repo: string): Promise<void> {
       } else {
         console.log(`[poll] Review stored locally for PR #${pr.number} [${verdict}] (GitHub posting disabled)`);
       }
-      markReviewed(owner, repo, pr.number, pr.headSha, body, verdict);
+      markReviewed(owner, repo, pr.number, pr.headSha, fullBody, verdict);
     } catch (err) {
       console.error(`[poll] Error reviewing PR #${pr.number}:`, (err as Error).message);
     }

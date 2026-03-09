@@ -66,7 +66,7 @@ export default function Settings() {
   };
 
   if (loading) {
-    return <div className="text-gray-500 text-center py-12">Loading...</div>;
+    return <div className="text-[var(--text-faint)] text-center py-12">Loading...</div>;
   }
 
   const isCloud = config.llm_provider === "cloud";
@@ -82,8 +82,8 @@ export default function Settings() {
               onClick={() => setProvider("cloud")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 isCloud
-                  ? "bg-[#7fff00] text-[#0f1923] font-bold"
-                  : "bg-[#1a2332] text-gray-400 hover:text-[#7fff00]"
+                  ? "bg-[var(--accent)] text-[var(--bg-page)] font-bold"
+                  : "bg-[var(--bg-input)] text-[var(--text-dim)] hover:text-[var(--accent)]"
               }`}
             >
               Cloud
@@ -92,8 +92,8 @@ export default function Settings() {
               onClick={() => setProvider("local")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 !isCloud
-                  ? "bg-[#7fff00] text-[#0f1923] font-bold"
-                  : "bg-[#1a2332] text-gray-400 hover:text-[#7fff00]"
+                  ? "bg-[var(--accent)] text-[var(--bg-page)] font-bold"
+                  : "bg-[var(--bg-input)] text-[var(--text-dim)] hover:text-[var(--accent)]"
               }`}
             >
               Local
@@ -118,12 +118,12 @@ export default function Settings() {
             </>
           )}
 
-          <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer mt-2">
+          <label className="flex items-center gap-2 text-sm text-[var(--text-dim)] cursor-pointer mt-2">
             <input
               type="checkbox"
               checked={showAdvanced}
               onChange={(e) => setShowAdvanced(e.target.checked)}
-              className="rounded bg-gray-800 border-gray-700"
+              className="rounded"
             />
             Show Base URL
           </label>
@@ -141,8 +141,8 @@ export default function Settings() {
         <Section title="GitHub">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
-              <span className="text-sm font-medium text-gray-300">Post reviews to GitHub</span>
-              <p className="text-xs text-gray-600 mt-0.5">
+              <span className="text-sm font-medium text-[var(--text-main)]">Post reviews to GitHub</span>
+              <p className="text-xs text-[var(--text-faint)] mt-0.5">
                 When off, reviews are stored locally only (visible in the dashboard)
               </p>
             </div>
@@ -150,7 +150,7 @@ export default function Settings() {
               type="checkbox"
               checked={config.post_to_github !== "false"}
               onChange={(e) => setConfig({ ...config, post_to_github: e.target.checked ? "true" : "false" })}
-              className="rounded bg-gray-800 border-gray-700"
+              className="rounded"
             />
           </label>
           <Field
@@ -172,12 +172,12 @@ export default function Settings() {
         <div className="flex items-center gap-4">
           <button
             onClick={handleSave}
-            className="bg-[#7fff00] text-[#0f1923] px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-[#6edf00] transition"
+            className="bg-[var(--accent)] text-[var(--bg-page)] px-6 py-2.5 rounded-lg font-bold text-sm hover:bg-[var(--accent-hover)] transition"
           >
             Save
           </button>
           {saved && (
-            <span className="text-green-400 text-sm">Settings saved!</span>
+            <span className="text-[var(--accent)] text-sm">Settings saved!</span>
           )}
         </div>
       </div>
@@ -188,10 +188,10 @@ export default function Settings() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+      <h2 className="text-sm font-semibold text-[var(--text-dim)] uppercase tracking-wider mb-4">
         {title}
       </h2>
-      <div className="space-y-4 bg-[#1a2332] border border-[#2a3a4a] rounded-xl p-5">
+      <div className="space-y-4 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl p-5">
         {children}
       </div>
     </div>
@@ -215,7 +215,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-300 mb-1.5">
+      <label className="block text-sm font-medium text-[var(--text-main)] mb-1.5">
         {label}
       </label>
       <input
@@ -223,9 +223,9 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-[#0f1923] border border-[#2a3a4a] rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-[#7fff00]/50 transition"
+        className="w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-main)] placeholder-[var(--text-faint)] focus:outline-none focus:border-[var(--accent)]/50 transition"
       />
-      {hint && <p className="text-xs text-gray-600 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-[var(--text-faint)] mt-1">{hint}</p>}
     </div>
   );
 }
