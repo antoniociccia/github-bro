@@ -123,4 +123,19 @@ router.get("/status", (_req: Request, res: Response) => {
   });
 });
 
+router.get("/worker-health", async (_req: Request, res: Response) => {
+  const config = getConfig();
+  const baseURL = config.llm_base_url || process.env.LLM_BASE_URL || "http://worker:8000/v1";
+  const healthURL = baseURL.replace(/\/v1\/?$/, "/health");
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const r = await fetch(healthURL, { signal: controller.signal });
+    clearTimeout(timeout);
+    res.json({ ok: r.ok, status: r.status });
+  } catch {
+    res.json({ ok: false, status: 0 });
+  }
+});
+
 export default router;

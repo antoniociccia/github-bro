@@ -40,6 +40,47 @@ export async function listOpenPRs(owner: string, repo: string): Promise<PRInfo[]
   }));
 }
 
+export async function getPRBranchGraph(owner: string, repo: string, pullNumber: number): Promise<string> {
+  try {
+    const { data: pr } = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+    const { data: commits } = await octokit.rest.pulls.listCommits({ owner, repo, pull_number: pullNumber, per_page: 50 });
+    const { data: comparison } = await octokit.rest.repos.compareCommits({
+      owner, repo,
+      base: pr.base.sha,
+      head: pr.base.ref,
+    });
+
+    const baseBranch = pr.base.ref;
+    const headBranch = pr.head.ref;
+    const mergeBase = pr.base.sha.slice(0, 7);
+
+    const baseCommits = comparison.commits.slice(-3);
+
+    let graph = "```mermaid\ngitGraph\n";
+    graph += `  commit id: "..."\n`;
+
+    for (const c of baseCommits) {
+      const msg = (c.commit.message.split("\n")[0]).slice(0, 35).replace(/"/g, "'");
+      graph += `  commit id: "${c.sha.slice(0, 7)} ${msg}"\n`;
+    }
+
+    graph += `  branch ${headBranch}\n`;
+
+    for (const c of commits) {
+      const msg = (c.commit.message.split("\n")[0]).slice(0, 35).replace(/"/g, "'");
+      graph += `  commit id: "${c.sha.slice(0, 7)} ${msg}"\n`;
+    }
+
+    graph += "```\n";
+    graph += `**Branch:** \`${headBranch}\` → \`${baseBranch}\` | **Commits:** ${commits.length} | **Merge base:** \`${mergeBase}\``;
+
+    return graph;
+  } catch (err) {
+    console.error(`[github] Failed to generate branch graph for PR #${pullNumber}:`, (err as Error).message);
+    return "";
+  }
+}
+
 export async function postReview(
   owner: string,
   repo: string,

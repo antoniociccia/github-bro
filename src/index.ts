@@ -3,7 +3,7 @@ import express, { type Request, type Response } from "express";
 import crypto from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getPRDiff, postReview } from "./github.js";
+import { getPRDiff, postReview, getPRBranchGraph } from "./github.js";
 import { reviewDiff } from "./reviewer.js";
 import { alreadyReviewed, markReviewed, getConfig } from "./db.js";
 import { startPoller } from "./poller.js";
@@ -70,12 +70,14 @@ app.post("/webhook", async (req: Request, res: Response) => {
   try {
     const diff = await getPRDiff(owner, repo, pullNumber);
     const { body, verdict } = await reviewDiff(diff, pull_request.title, pull_request.body);
+    const graph = await getPRBranchGraph(owner, repo, pullNumber);
+    const fullBody = graph ? `${graph}\n\n---\n\n${body}` : body;
     const config = getConfig();
     const postToGithub = (config.post_to_github || "true") !== "false";
     if (postToGithub) {
       await postReview(owner, repo, pullNumber, body, verdict);
     }
-    markReviewed(owner, repo, pullNumber, headSha, body, verdict);
+    markReviewed(owner, repo, pullNumber, headSha, fullBody, verdict);
     console.log(`Review ${postToGithub ? "posted" : "stored locally"} on PR #${pullNumber} [${verdict}]`);
     res.status(200).send(postToGithub ? "Review posted" : "Review stored");
   } catch (err) {
